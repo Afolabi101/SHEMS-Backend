@@ -154,10 +154,35 @@ if __name__ == '__main__':
     sensors_dict[room_name] = RoomSensors(room_name)
     
     # FIX 3: Register BOTH the controller AND the database logger
+                        # --- This part goes inside the if __name__ == '__main__': block ---
+
     from database import DataLogger
-    logger = DataLogger()
-    
-    sensors_dict[room_name].add_observer(rooms[room_name]) # Control logic
-    sensors_dict[room_name].add_observer(logger)          # Database logging
-    
+
+# This 'Translator' takes the bundle of sensor data and 
+# saves each piece individually to the database.
+    class SensorToDatabaseAdapter:
+        def __init__(self, logger, room_id):
+            self.logger = logger
+            self.room_id = room_id
+        
+        def update(self, temp, occupied, light_level):
+        # Translate the bundle into three separate database entries
+            self.logger.update(self.room_id, "Temperature", temp)
+            self.logger.update(self.room_id, "Occupancy", 1 if occupied else 0)
+            self.logger.update(self.room_id, "LightLevel", light_level)
+
+# Setup
+    db.init_db() # Create tables if they don't exist
+    room_name = "Living Room"
+    controller = RoomController(room_name) #
+    sensors = RoomSensors(room_name) #
+
+# Create the Adapter
+    logger_instance = DataLogger() #
+    db_adapter = SensorToDatabaseAdapter(logger_instance, room_name)
+
+# Register the observers
+    sensors.add_observer(controller) # Tells controller to adjust AC/Lights
+    sensors.add_observer(db_adapter) # Tells adapter to save data to SQLite
+
     app.run(debug=True, port=5000)

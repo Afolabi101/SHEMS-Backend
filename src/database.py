@@ -1,5 +1,5 @@
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta  
 
 def init_db():
     """Initializes the SQLite database and creates tables."""
