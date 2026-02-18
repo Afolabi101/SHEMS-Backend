@@ -1,0 +1,10 @@
+# Exclude the virtual environment
+venv/
+.venv/
+
+# Exclude compiled Python files
+__pycache__/
+*.pyc
+
+# Exclude the database (optional, unless you want to share your results)
+# smarthome.db
