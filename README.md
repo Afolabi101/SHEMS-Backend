@@ -1,0 +1,67 @@
+
+
+```markdown
+# Smart Home Energy Management System (SHEMS) - Backend & Simulation
+
+This repository contains the core backend logic, database management, and simulation testbench for the Smart Home Energy Management System. The project focuses on optimizing energy consumption through intelligent sensor-based control and occupancy-based automation.
+
+## 🏗️ Architecture & Design Patterns
+The system is built using a **Layered Architectural Approach** to ensure modularity and scalability.
+
+- **Observer Pattern**: Implemented to allow `RoomSensors` (Subject) to notify both the `RoomController` and `DataLogger` (Observers).
+- **Transition-Only Logging**: To ensure data integrity and precise duration-based energy math, appliance states are recorded only when a change (ON/OFF) occurs.
+- **RESTful API**: A Flask-based API serves as the coordination layer for real-time monitoring and simulation control.
+
+## 📊 Energy Computation Model
+Energy consumption ($kWh$) is derived using duration-based integration:
+- **AC Rating**: 1.5 kW
+- **Lighting Rating**: 0.06 kW
+- **Formula**: $kWh = \text{Power (kW)} \times \text{Duration (Hours)}$
+
+## 🚀 Getting Started
+
+### 1. Installation
+Ensure you have Python installed, then install the required dependencies:
+```bash
+pip install flask requests
+
+```
+
+### 2. Start the API Server
+
+Run the main application from the source directory to initialize the database and start the listener:
+
+```bash
+python src/app.py
+
+```
+
+### 3. Execute the 24-Hour Simulation
+
+In a second terminal window, run the simulation script to process a full cycle:
+
+```bash
+python src/run_24h_sim.py
+
+```
+
+## 📉 Verified Results (Chapter 3)
+
+Based on the verified 24-hour simulation results:
+
+* **Baseline Consumption**: 36.72 kWh
+* **Smart System Consumption**: 3.13 kWh
+* **Total Energy Saved**: 33.59 kWh
+* **Efficiency Increase**: **91.5%**
+
+## 📁 Project Structure
+
+* `src/app.py`: Main Flask API and Observer registration.
+* `src/database.py`: SQLite initialization and energy calculation logic.
+* `src/control.py`: Room controller and appliance state evaluation.
+* `src/sensors.py`: Environmental condition simulation.
+* `src/run_24h_sim.py`: Automated 24-hour simulation testbench.
+* `docs/`: Documentation including the detailed System Implementation report.
+
+```
+
