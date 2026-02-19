@@ -2,7 +2,6 @@
 Energy analytics module for SHEMS.
 Pulls appliance ON/OFF data, calculates energy, savings, and prepares dashboard JSON.
 """
-import os
 import sqlite3
 from datetime import datetime
 
@@ -12,15 +11,7 @@ TARIFF_NGN_PER_KWH = 68  # Band A
 OCCUPIED_HOURS = 15  # 8-22
 UNOCCUPIED_HOURS = 9   # 23-7
 WASTE_FRACTION = 0.3  # 30% waste when unoccupied
-
-
-_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-_PROJECT_ROOT = os.path.dirname(_SCRIPT_DIR)
-_DB_PATHS = [
-    os.path.join(_PROJECT_ROOT, "smarthome.db"),
-    os.path.join(_SCRIPT_DIR, "smarthome.db"),
-]
-DB_NAME = next((p for p in _DB_PATHS if os.path.exists(p)), _DB_PATHS[0])
+DB_NAME="smarthome.db"
 
 
 def _parse_timestamp(ts_str):
