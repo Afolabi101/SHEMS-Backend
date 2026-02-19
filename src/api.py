@@ -6,7 +6,6 @@ from datetime import datetime
 app = Flask(__name__)
 logger = DataLogger()
 
-
 # 1. Endpoint to log sensor data
 @app.route('/log/sensor', methods=['POST'])
 def log_sensor():
@@ -14,7 +13,6 @@ def log_sensor():
     # Expected format: {"room_id": "Living Room", "type": "Temp", "value": 24.5}
     logger.update(data['room_id'], data['type'], data['value'])
     return jsonify({"status": "success", "message": "Sensor data logged"}), 201
-
 
 # 2. Endpoint to log appliance state changes
 @app.route('/log/appliance', methods=['POST'])
@@ -31,7 +29,6 @@ def log_appliance():
     conn.close()
     return jsonify({"status": "success", "message": "Appliance state logged"}), 201
 
-
 # 3. Endpoint to get energy report
 @app.route('/report/energy/<room_id>/<appliance>', methods=['GET'])
 def get_energy(room_id, appliance):
@@ -45,4 +42,5 @@ def get_energy(room_id, appliance):
 if __name__ == '__main__':
     from database import init_db
     init_db()  # Creates tables if they don't exist
+    # This line MUST be reached for the server to stay open:
     app.run(debug=True, port=5000, host='0.0.0.0')
