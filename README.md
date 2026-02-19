@@ -20,14 +20,23 @@ Energy consumption ($kWh$) is derived using duration-based integration:
 
 ## 🚀 Getting Started
 
-### 1. Installation
-Ensure you have Python installed, then install the required dependencies:
-```bash
-pip install flask requests
+### 1. Create and Activate Virtual Environment
+Create a virtual environment and activate it before installing dependencies:
 
+```bash
+python -m venv venv
+source venv/bin/activate   # On macOS/Linux
+# venv\Scripts\activate   # On Windows
 ```
 
-### 2. Start the API Server
+### 2. Installation
+Ensure you have Python installed, then install the required dependencies:
+
+```bash
+pip install flask requests
+```
+
+### 3. Start the API Server
 
 Run the main application from the source directory to initialize the database and start the listener:
 
@@ -36,7 +45,7 @@ python src/app.py
 
 ```
 
-### 3. Execute the 24-Hour Simulation
+### 4. Execute the 24-Hour Simulation
 
 In a second terminal window, run the simulation script to process a full cycle:
 
