@@ -1,38 +1,62 @@
-class Appliance:
-    def __init__(self, name, power):
-        self.name = name
-        self.power = power
-        self.state = "OFF"
+from typing import Dict, Any
+from sensors import SensorObserver
 
-class RoomController:
-    def __init__(self, room_name):
+class ACController:
+    def __init__(self):
+        self.state = "OFF"
+    def update_state(self, occupied: bool, temp: float) -> str:
+        if not occupied:
+            self.state = "OFF"
+        elif self.state == "OFF":
+            self.state = "COOLING" if temp >= 28 else "STANDBY"
+        elif self.state == "STANDBY":
+            if temp >= 28:
+                self.state = "COOLING"
+        elif self.state == "COOLING":
+            if temp < 24:
+                self.state = "STANDBY"
+        return self.state
+
+class LightController:
+    def __init__(self):
+        self.state = "OFF"
+    def update_state(self, occupied: bool, light_level: int) -> str:
+        if occupied and light_level < 300:
+            self.state = "ON"
+        else:
+            self.state = "OFF"
+        return self.state
+
+class RoomController(SensorObserver):
+    def __init__(self, room_name: str):
         self.room_name = room_name
-        self.ac = Appliance("AC", 1.5)
-        self.lights = Appliance("Light", 0.06)
-        self.current_temp = 25.0
-        self.current_light_level = 500
+        self.ac = ACController()
+        self.lights = LightController()
+        self.current_temp = 20.0
         self.is_occupied = False
+        self.current_light_level = 500
         self.manual_ac_override = None
         self.manual_light_override = None
 
-    def update(self, temp, occupied, light_level):
-        """Called by RoomSensors (Subject) via Observer Pattern"""
-        self.current_temp = temp
-        self.is_occupied = occupied
-        self.current_light_level = light_level
+    def update(self, sensor_data: Dict[str, Any]) -> None:
+        stype = sensor_data.get('sensor_type')
+        if stype == 'temperature':
+            self.current_temp = sensor_data['value']
+        elif stype == 'pir':
+            self.is_occupied = sensor_data['occupied']
+        elif stype == 'ldr':
+            self.current_light_level = sensor_data['value']
 
-    def evaluate_state(self):
-        """Logic to turn things ON/OFF based on sensor data"""
-        # AC Logic
+    def evaluate_state(self) -> tuple:
+        """Processes current sensor readings through FSMs and returns new states."""
         if self.manual_ac_override:
-            self.ac.state = self.manual_ac_override
+            ac_state = self.manual_ac_override
         else:
-            self.ac.state = "COOLING" if self.current_temp > 24 else "OFF"
-            
-        # Light Logic
+            ac_state = self.ac.update_state(self.is_occupied, self.current_temp)
+
         if self.manual_light_override:
-            self.lights.state = self.manual_light_override
+            light_state = self.manual_light_override
         else:
-            self.lights.state = "ON" if self.is_occupied and self.current_light_level < 300 else "OFF"
-            
-        return self.ac.state, self.lights.state
+            light_state = self.lights.update_state(self.is_occupied, self.current_light_level)
+        
+        return ac_state, light_state

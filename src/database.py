@@ -1,5 +1,8 @@
 import sqlite3
-from datetime import datetime, timedelta  
+from datetime import datetime, timedelta
+
+# Fixed simulated start date for consistent, repeatable testing
+SIMULATION_START = datetime(2026, 2, 18, 0, 0, 0)
 
 def init_db():
     """Initializes the SQLite database and creates tables."""
@@ -46,24 +49,29 @@ def init_db():
     print("Database initialized successfully.")
 
 class DataLogger:
-    """Observer class that logs sensor data to the database."""
+    """Observer class that logs sensor data from Ridwanullah's dict-based notifications."""
     def __init__(self, db_name='smarthome.db'):
         self.db_name = db_name
 
-    def update(self, room_id, sensor_type, value):
-        """This method is called automatically by the Sensor Subject."""
-        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
+    def update(self, data: dict):
+        # Ridwanullah uses 'room' and 'hour' in his dictionary
+        room_id = data.get('room', 'Unknown')
+        sensor_type = data.get('sensor_type', 'Unknown')
+        value = data.get('value', 0)
+        simulated_hour = data.get('hour', 0) 
+        
+        # Calculate fixed timestamp based on the simulated hour
+        sim_time = SIMULATION_START + timedelta(hours=simulated_hour)
+        timestamp_str = sim_time.strftime('%Y-%m-%d %H:%M:%S.%f')
+        
         conn = sqlite3.connect(self.db_name)
         cursor = conn.cursor()
-        
         cursor.execute('''
             INSERT INTO sensor_log (room_id, sensor_type, value, timestamp)
             VALUES (?, ?, ?, ?)
-        ''', (room_id, sensor_type, value, timestamp))
-        
+        ''', (room_id, sensor_type, value, timestamp_str))
         conn.commit()
         conn.close()
-        print(f"[Log] Recorded {sensor_type} in {room_id}: {value}")
 
 def calculate_energy(room_id, appliance):
     """Calculates kWh based on appliance ON/OFF duration."""
@@ -106,19 +114,15 @@ def calculate_energy(room_id, appliance):
 
     kwh = total_hours * POWER_RATINGS.get(appliance, 0)
     
-    cursor.execute('''
-        INSERT INTO energy_log (room_id, appliance, kwh, period_start, period_end)
-        VALUES (?, ?, ?, ?, ?)
-    ''', (room_id, appliance, kwh, logs[0][2], logs[-1][2]))
+    if logs:
+        cursor.execute('''
+            INSERT INTO energy_log (room_id, appliance, kwh, period_start, period_end)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (room_id, appliance, kwh, logs[0][2], logs[-1][2]))
 
     conn.commit()
     conn.close()
     return kwh
-
-# This block ensures the database is created if you run this file directly
-if __name__ == "__main__":
-    init_db()
-
 
 def get_sensor_history(room_id, sensor_type):
     """Fetches sensor reading history for the API."""
@@ -136,11 +140,12 @@ def get_sensor_history(room_id, sensor_type):
 def get_connection():
     return sqlite3.connect('smarthome.db')
 
-def log_appliance_state(room_id, appliance, state, is_on, hour):
+def log_appliance_state(room_id, appliance, state, is_on, step):
+    """Logs state transitions using the 5-minute step timeline."""
     conn = get_connection()
     cursor = conn.cursor()
     
-    # FIX 1: Check if the state actually changed before logging
+    # Check if the state actually changed before logging
     cursor.execute('''SELECT is_on FROM appliance_log 
                       WHERE room_id=? AND appliance=? 
                       ORDER BY timestamp DESC LIMIT 1''', (room_id, appliance))
@@ -150,16 +155,14 @@ def log_appliance_state(room_id, appliance, state, is_on, hour):
         conn.close()
         return # Don't log if the state is the same!
 
-    # FIX 2: Use consistent Simulated Time
-    sim_time = datetime.now().replace(minute=0, second=0, microsecond=0) - timedelta(hours=(24-hour))
+    # 1 step = 5 minutes
+    sim_time = SIMULATION_START + timedelta(minutes=step * 5)
     timestamp = sim_time.strftime('%Y-%m-%d %H:%M:%S.%f')
     
     cursor.execute('''INSERT INTO appliance_log (room_id, appliance, state, is_on, timestamp)
                       VALUES (?, ?, ?, ?, ?)''', (room_id, appliance, state, 1 if is_on else 0, timestamp))
     conn.commit()
     conn.close()
-
-
 
 def calculate_total_energy():
     """Aggregates energy data for the baseline comparison in Chapter 3."""
@@ -186,8 +189,6 @@ def get_db_stats():
     conn.close()
     return stats
 
-    #manualreset
-
 def reset_db():
     """Clears all logs for a fresh, clean simulation run."""
     conn = sqlite3.connect('smarthome.db')
@@ -197,10 +198,8 @@ def reset_db():
     cursor.execute("DELETE FROM energy_log")
     conn.commit()
     conn.close()
-    print("Database cleared for a fresh 24-hour simulation.")
+    print("Database cleared for a fresh simulation.")
 
-    
-    print("\n--- Simulation Complete. Fetching final numbers ---")
-    # Correct these URLs to match your app.py routes
-    energy_res = requests.get(f"{BASE_URL}/energy")
-    print(energy_res.json())
+# This block ensures the database is created if you run this file directly
+if __name__ == "__main__":
+    init_db()

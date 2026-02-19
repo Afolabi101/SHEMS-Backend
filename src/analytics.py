@@ -6,7 +6,7 @@ import os
 import sqlite3
 from datetime import datetime
 
-# Constants
+# Constants (aligned with app.py: 4 rooms, 288 steps of 5 min = 24h)
 POWER_RATINGS = {"AC": 1.5, "Light": 0.06}  # kW
 TARIFF_NGN_PER_KWH = 68  # Band A
 OCCUPIED_HOURS = 15  # 8-22
@@ -114,19 +114,26 @@ def get_daily_cost_ngn(db_name=DB_NAME):
     return round(by_app["total"] * TARIFF_NGN_PER_KWH, 2)
 
 
-def get_baseline_energy():
+def get_baseline_energy(db_name=DB_NAME):
     """
     Without SHEMS: appliances run during all occupied time + 30% waste when unoccupied.
     Returns dict: {"AC": float, "Light": float, "total": float}
     """
     # Occupied: full usage. Unoccupied: 30% waste (left on)
+    # Per room × num_rooms (from DB)
+    conn = sqlite3.connect(db_name)
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(DISTINCT room_id) FROM appliance_log")
+    num_rooms = cursor.fetchone()[0] or 4
+    conn.close()
+
     effective_hours = OCCUPIED_HOURS + (WASTE_FRACTION * UNOCCUPIED_HOURS)
-    ac_kwh = round(effective_hours * POWER_RATINGS["AC"], 4)
-    light_kwh = round(effective_hours * POWER_RATINGS["Light"], 4)
+    ac_kwh_per_room = effective_hours * POWER_RATINGS["AC"]
+    light_kwh_per_room = effective_hours * POWER_RATINGS["Light"]
     return {
-        "AC": ac_kwh,
-        "Light": light_kwh,
-        "total": round(ac_kwh + light_kwh, 4),
+        "AC": round(ac_kwh_per_room * num_rooms, 4),
+        "Light": round(light_kwh_per_room * num_rooms, 4),
+        "total": round((ac_kwh_per_room + light_kwh_per_room) * num_rooms, 4),
     }
 
 

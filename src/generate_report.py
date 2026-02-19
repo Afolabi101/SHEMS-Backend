@@ -23,16 +23,16 @@ def generate_table1():
     lines = [
         "Table 1: Energy Consumption by Room and Appliance (24-Hour Period)",
         "",
-        "| Room       | AC (kWh) | Light (kWh) | Total (kWh) |",
-        "|------------|----------|-------------|-------------|",
+        "| Room          | AC (kWh) | Light (kWh) | Total (kWh) |",
+        "|---------------|----------|-------------|-------------|",
     ]
     for row in data:
         lines.append(
-            f"| {row['room_id']:<10} | {row['AC']:>8.4f} | {row['Light']:>11.4f} | {row['total']:>11.4f} |"
+            f"| {row['room_id']:<13} | {row['AC']:>8.4f} | {row['Light']:>11.4f} | {row['total']:>11.4f} |"
         )
     if data:
         totals = analytics.get_energy_by_appliance()
-        lines.append(f"| {'Total':<10} | {totals['AC']:>8.4f} | {totals['Light']:>11.4f} | {totals['total']:>11.4f} |")
+        lines.append(f"| {'Total':<13} | {totals['AC']:>8.4f} | {totals['Light']:>11.4f} | {totals['total']:>11.4f} |")
     return "\n".join(lines)
 
 
