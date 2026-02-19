@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request
 
-import database as db 
+import database as db
+import analytics
 from control import RoomController
 from sensors import RoomSensors
 
@@ -145,6 +146,17 @@ def get_db_stats():
         return jsonify({"status": "success", "data": stats}), 200
     except Exception as e:
         return jsonify({"error": f"Database error: {str(e)}"}), 500
+
+
+@app.route('/api/analytics', methods=['GET'])
+def get_analytics():
+    """Energy analytics for dashboard: by room, by appliance, cost, savings, db stats."""
+    try:
+        payload = analytics.get_dashboard_payload()
+        return jsonify({"status": "success", "data": payload}), 200
+    except Exception as e:
+        return jsonify({"error": f"Analytics error: {str(e)}"}), 500
+
         
 if __name__ == '__main__':
     db.init_db()
